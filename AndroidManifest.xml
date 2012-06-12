@@ -25,5 +25,6 @@
 
         </activity>
 
+        <service android:name=".VoiceService"/>
     </application>
 </manifest> 
