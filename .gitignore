@@ -2,5 +2,10 @@ bin/
 out/
 assets/
 libs/
-.idea/
+.idea/*
+.idea/*/*
 *~
+*.properties
+*.iml
+build.xml
+proguard-project.txt

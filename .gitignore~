@@ -3,3 +3,8 @@ out/
 assets/
 libs/
 .idea/
+*~
+*.properties
+*.iml
+build.xml
+proguard-project.txt
