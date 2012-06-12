@@ -1,0 +1,5 @@
+Voice is an Android application that allows 2 phones to make calls to 
+each other over a local network
+
+It uses a backport of the Android RTP APIs that were introduced in
+Honeycomb (Version 3.1).
