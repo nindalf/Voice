@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:orientation="vertical">
+
+    <LinearLayout android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:layout_weight="100"
+            >
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/in_call_with"
+            android:textSize="28sp"
+            android:gravity="center_horizontal"
+            />
+        <TextView
+            android:id="@+id/peers_ip"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textSize="28sp"
+            android:gravity="center_horizontal"
+            />
+
+        <TextView
+                android:id="@+id/timer"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textSize="28sp"
+                android:gravity="center_horizontal"
+                />
+    </LinearLayout>
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="25dip"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal"
+            android:layout_weight="100"
+            android:padding="5dip">
+        <Button style="@style/DialpadButtonStyle" android:layout_height="match_parent" android:id="@+id/end" android:text="@string/text_button_end"/>
+        </LinearLayout>
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="25dip"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal"
+            android:layout_weight="100"
+            android:padding="5dip">
+        <Button style="@style/DialpadButtonStyle" android:layout_height="match_parent" android:id="@+id/mute" android:text="@string/text_button_mute"/>
+        <Button style="@style/DialpadButtonStyle" android:layout_height="match_parent" android:id="@+id/hold" android:text="@string/text_button_hold"/>
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voice</string>
+    <string name="your_ip">Your IP Address:</string>
+    <string name="target_ip">Enter target\'s IP Address:</string>
+    <string name="call">Call</string>
+    <string name="end">End</string>
+    <string name="incoming_call">Incoming call from</string>
+    <string name="pickup">Respond</string>
+
+    <string name="DiallerActivity">Dialler</string>
+    <string name="InCallActivity">In Call</string>
+    <string name="NewCallActivity">New Call</string>
+
+    <string name="description_image_button_one">one</string>
+    <string name="description_image_button_two">two</string>
+    <string name="description_image_button_three">three</string>
+    <string name="description_image_button_four">four</string>
+    <string name="description_image_button_five">five</string>
+    <string name="description_image_button_six">six</string>
+    <string name="description_image_button_seven">seven</string>
+    <string name="description_image_button_eight">eight</string>
+    <string name="description_image_button_nine">nine</string>
+    <string name="description_image_button_star">star</string>
+    <string name="description_image_button_zero">zero</string>
+    <string name="description_image_button_pound">pound</string>
+
+    <string name="text_button_one">1</string>
+    <string name="text_button_two">2</string>
+    <string name="text_button_three">3</string>
+    <string name="text_button_four">4</string>
+    <string name="text_button_five">5</string>
+    <string name="text_button_six">6</string>
+    <string name="text_button_seven">7</string>
+    <string name="text_button_eight">8</string>
+    <string name="text_button_nine">9</string>
+    <string name="text_button_star">*</string>
+    <string name="text_button_zero">0</string>
+    <string name="text_button_pound">#</string>
+    <string name="text_button_period">.</string>
+    <string name="text_button_clear">Clear</string>
+    <string name="text_button_call">Call</string>
+
+    <string name="in_call_with">In Call With:</string>
+    <string name="text_button_end">End</string>
+    <string name="text_button_hold">Hold</string>
+    <string name="text_button_mute">Mute</string>
+
+</resources>
