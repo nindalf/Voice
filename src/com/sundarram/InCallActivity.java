@@ -1,9 +1,13 @@
 package com.sundarram;
 
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -15,12 +19,10 @@ public class InCallActivity extends Activity
 {
     public static final int DIALLED = 1;
     public static final int RECEIVED = 2;
-    Handler mHandler;
-    long mStartTime;
-    TextView mTimer;
     private Integer requestedByActivity;
     private String target;
 
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.incall);
@@ -53,6 +55,12 @@ public class InCallActivity extends Activity
         }
     };
 
+    /** Timer related data members */
+    Handler mHandler;
+    long mStartTime;
+    TextView mTimer;
+
+    /** Initializes timer data memebers and starts the handler */
     private void initTimer() {
         mTimer = ((TextView)findViewById(R.id.timer));
         mStartTime = SystemClock.uptimeMillis();
@@ -61,6 +69,7 @@ public class InCallActivity extends Activity
         mHandler.postDelayed(mUpdateTimeTask, 100L);
     }
 
+    /** Runnable that updates the timer every second */
     private Runnable mUpdateTimeTask = new Runnable() {
         public void run() {
             final long start = mStartTime;
@@ -80,8 +89,44 @@ public class InCallActivity extends Activity
         }
     };
 
+    @Override
     public void finish() {
         super.finish();
     }
+
+    /** The following code provides a connection to VoiceService*/
+    VoiceService mService;
+    boolean mBound = false;
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        //Bind to VoiceService
+        Intent intent = new Intent(this, VoiceService.class);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if(mBound) {
+            unbindService(mConnection);
+            mBound = false;
+        }
+    }
+    /** Binds this activity to the VoiceService */
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            VoiceService.VoiceBinder binder = (VoiceService.VoiceBinder) iBinder;
+            mService = binder.getService();
+            mBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            mBound = false;
+        }
+    };
 
 }
