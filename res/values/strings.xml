@@ -44,6 +44,8 @@
     <string name="in_call_with">In Call With:</string>
     <string name="text_button_end">End</string>
     <string name="text_button_hold">Hold</string>
+    <string name="text_button_resume">Resume</string>
     <string name="text_button_mute">Mute</string>
+    <string name="text_button_unmute">Unmute</string>
 
 </resources>

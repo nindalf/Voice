@@ -5,12 +5,14 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.net.rtp.AudioGroup;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.sundarram.R;
@@ -26,6 +28,7 @@ public class InCallActivity extends Activity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.incall);
+        //TODO: the hold and mute buttons must only be enabled after the call connects. Timer should only start then.
         initTimer();
 
         Bundle localBundle = getIntent().getExtras();
@@ -47,11 +50,47 @@ public class InCallActivity extends Activity
 
     private View.OnClickListener onHoldListener = new View.OnClickListener() {
         public void onClick(View paramView) {
+            Button holdButton = (Button)findViewById(R.id.hold);
+            Button muteButton = (Button)findViewById(R.id.mute);
+            if(mService.isAudioGroupSet()) {
+                int curMode = mService.getAudioGroupMode();
+                if(curMode != AudioGroup.MODE_ON_HOLD) {
+                    // will hold the AudioGroup
+                    mService.holdGroup(true);
+                    holdButton.setText(R.string.text_button_resume);
+                    muteButton.setEnabled(false);
+                }
+                else {
+                    // will unhold the AudioGroup - set it to NORMAL
+                    mService.holdGroup(false);
+                    holdButton.setText(R.string.text_button_hold);
+                    muteButton.setEnabled(true);
+                }
+
+            }
         }
     };
 
     private View.OnClickListener onMuteListener = new View.OnClickListener() {
         public void onClick(View paramView) {
+            Button holdButton = (Button)findViewById(R.id.hold);
+            Button muteButton = (Button)findViewById(R.id.mute);
+            if(mService.isAudioGroupSet()) {
+                int curMode = mService.getAudioGroupMode();
+                if(curMode != AudioGroup.MODE_MUTED) {
+                    // will mute the AudioGroup
+                    mService.muteGroup(true);
+                    muteButton.setText(R.string.text_button_unmute);
+                    holdButton.setEnabled(false);
+                }
+                else {
+                    // will unmute the AudioGroup
+                    mService.muteGroup(false);
+                    muteButton.setText(R.string.text_button_mute);
+                    holdButton.setEnabled(true);
+                }
+
+            }
         }
     };
 

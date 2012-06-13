@@ -39,7 +39,7 @@ public class VoiceService extends Service {
     }
 
     /**
-     * Client functions
+     * Client functions to manipulate the AudioGroup and AudioStream.
      */
 
     private AudioGroup audioGroup;
@@ -96,6 +96,25 @@ public class VoiceService extends Service {
         }
     }
 
+    public int getAudioGroupMode() {
+        return audioGroup.getMode();
+    }
+
+    public int getAudioStreamMode() {
+        return audioStream.getMode();
+    }
+
+    public boolean isAudioGroupSet() {
+        if(audioGroup != null)
+            return true;
+        return false;
+    }
+
+    public boolean isAudioStreamSet() {
+        if(audioStream != null)
+            return true;
+        return false;
+    }
 
     public void closeAll() {
         audioStream.join(null);
@@ -107,4 +126,8 @@ public class VoiceService extends Service {
         localInetAddress = null;
         Log.i("xxx", "Resources reset.");
     }
+
+    /**
+     * Threads that enable sending and receiving of signalling data.
+     */
 }
