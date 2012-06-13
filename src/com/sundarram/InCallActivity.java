@@ -28,7 +28,21 @@ public class InCallActivity extends Activity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.incall);
-        //TODO: the hold and mute buttons must only be enabled after the call connects. Timer should only start then.
+
+        mTimer = ((TextView)findViewById(R.id.timer));
+        mTimer.setText(R.string.ringing);
+        //TODO: Should do when this activity starts
+        //set localInetAddress.
+        //set remoteInetAddress or outsource to other activities.
+        //start localAudio
+        //send Audioport
+        //send ready signal
+        //TODO: The following should happend once a READY signal is received:
+        // Hold and Mute enabled.
+        // Timer should start.
+        // Set inCall
+        // Listen for changes to receivedSignal
+        // the hold and mute buttons must only be enabled after the call connects. Timer should only start then.
         initTimer();
 
         Bundle localBundle = getIntent().getExtras();
@@ -140,9 +154,11 @@ public class InCallActivity extends Activity
     @Override
     public void onStart() {
         super.onStart();
-        //Bind to VoiceService
+        //Bind to VoiceService.
         Intent intent = new Intent(this, VoiceService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        //started the receiver to receive signals from remote client.
+        mService.receive(VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
     }
 
     @Override
