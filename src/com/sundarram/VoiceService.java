@@ -1,5 +1,6 @@
 package com.sundarram;
 
+import android.app.Activity;
 import android.app.Service;
 import android.content.Intent;
 import android.net.rtp.AudioCodec;
@@ -31,6 +32,9 @@ public class VoiceService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if(newCallListenerWorking == false) {
+            new Thread(new NewCallListener(NEW_CALL_PORT)).start();
+        }
         Log.i("VoiceService", "Received start id " + startId + ": " + intent);
         return START_STICKY;
     }
@@ -46,11 +50,11 @@ public class VoiceService extends Service {
 
     private AudioGroup audioGroup;
     private AudioStream audioStream;
-    private boolean inCall;
+    private boolean inCall, newCallListenerWorking;
     private InetAddress localInetAddress, remoteInetAddress;
     private int localAudioPort, remoteAudioPort;
-    public static final int LONG_SIGNAL_RECEIVE_PORT = 8237;
-    public static final int SHORT_SIGNAL_RECEIVE_PORT = 8236;
+    public static final int NEW_CALL_PORT = 8237;
+    public static final int SIGNAL_RECEIVE_PORT = 8236;
     public static final int SIGNAL_SEND_PORT = 8235;
 
     public void startAudioStream() {
@@ -132,6 +136,21 @@ public class VoiceService extends Service {
         localInetAddress = null;
         Log.i("VoiceService", "Resources reset.");
     }
+    //TODO: BOTH OF THE FOLLOWING FUNCTIONS
+    public void newCall() {
+        localInetAddress = Helper.getLocalIpAddress();
+
+        inCall = true;
+        receive(SIGNAL_RECEIVE_PORT);
+        startAudioStream();
+        send(localAudioPort, SIGNAL_RECEIVE_PORT, SIGNAL_SEND_PORT);
+
+
+    }
+
+    public void parseSignal(int message) {
+
+    }
 
     /**
      * Threads that enable sending and receiving of signalling data.
@@ -148,28 +167,29 @@ public class VoiceService extends Service {
     public static final int REJECT = 107;
 
     // Is this method better than making the Send class public?
-    public void send(int message, int remotePort) {
-        new Thread(new Send(message, remotePort)).start();
+    public void send(int message, int remotePort, int localPort) {
+        new Thread(new Send(message, remotePort, localPort)).start();
     }
 
     public void receive(int localPort) {
-        new Thread(new Receive(localPort)).start();
+        new Thread(new SignalListener(localPort) ).start();
     }
 
-    //TODO: create persistent sockets. More efficient.
+    //TODO: create persistent socket to send. More efficient.
     private class Send implements Runnable {
-        int toSend, remoteSignalPort;
+        int toSend, remoteSignalPort, localSignalPort;
 
-        Send(int message, int remotePort) {
+        Send(int message, int remotePort, int localPort) {
             toSend = message;
             remoteSignalPort = remotePort;
+            localSignalPort = localPort;
         }
 
         public void run() {
             Socket socket = null;
             DataOutputStream dataOutputStream = null;
             try {
-                socket = new Socket(remoteInetAddress.getHostName(), remoteSignalPort, localInetAddress, SIGNAL_SEND_PORT);
+                socket = new Socket(remoteInetAddress.getHostName(), remoteSignalPort, localInetAddress, localSignalPort);
                 dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 dataOutputStream.writeShort(toSend);
                 Log.i("VoiceService", "Sent " + toSend + "to " + remoteInetAddress.getHostName() + " port " + remoteSignalPort);
@@ -199,14 +219,12 @@ public class VoiceService extends Service {
                 }
 
             }
-
-
         }
     }
 
-    private class Receive implements Runnable {
+    private class SignalListener implements Runnable {
         int localSignalPort;
-        Receive(int localPort) {
+        SignalListener(int localPort) {
             localSignalPort = localPort;
         }
         @Override
@@ -231,6 +249,7 @@ public class VoiceService extends Service {
                     if(remoteInetAddress.equals(socket.getInetAddress())) {
                         message = dataInputStream.readShort();
                         Log.i("VoiceService", "Received " + message + " from " + remoteInetAddress.getHostName() + " on port " + localSignalPort);
+                        parseSignal(message);
                         // parse the message and take action.
                     }
                 }
@@ -238,6 +257,75 @@ public class VoiceService extends Service {
                     e.printStackTrace();
                 }
                 finally  {
+                    if(socket != null) {
+                        try {
+                            socket.close();
+                        }
+                        catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if(dataInputStream != null) {
+                        try {
+                            dataInputStream.close();
+                        }
+                        catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    private class NewCallListener implements Runnable {
+        int localSignalPort;
+        NewCallListener(int localPort) {
+            localSignalPort = localPort;
+        }
+        @Override
+        public void run() {
+            int message;
+            ServerSocket serverSocket = null;
+            Socket socket = null;
+            DataInputStream dataInputStream = null;
+            boolean flag = true;
+            try {
+                serverSocket = new ServerSocket(localSignalPort);
+                newCallListenerWorking = true;
+            }
+            catch(IOException e) {
+                e.printStackTrace();
+                flag = false;
+                newCallListenerWorking = false;
+            }
+            while(flag) {
+                try {
+                    Log.i("Receive", "Listening on port " + localSignalPort);
+                    socket = serverSocket.accept();
+                    dataInputStream = new DataInputStream(socket.getInputStream());
+                    message = dataInputStream.readShort();
+                    // parse the message and take action.
+                    if(message == 100 && inCall == false) {
+                        remoteInetAddress = socket.getInetAddress();
+                        localInetAddress = Helper.getLocalIpAddress();
+                        Log.i("VoiceService", "Received " + message + " from " + remoteInetAddress.getHostName() + " on port " + localSignalPort);
+
+                        // start NewCallActivity
+                        Intent newCallIntent = new Intent(getBaseContext(), NewCallActivity.class);
+                        newCallIntent.putExtra("target", remoteInetAddress.getHostName());
+                        newCallIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        getApplication().startActivity(newCallIntent);
+
+                        //newCall();
+                    }
+                }
+                catch(IOException e) {
+                    e.printStackTrace();
+                }
+                finally  {
+                    newCallListenerWorking = false;
                     if(socket != null) {
                         try {
                             socket.close();

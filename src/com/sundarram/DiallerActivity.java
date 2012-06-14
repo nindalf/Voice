@@ -119,7 +119,7 @@ public class DiallerActivity extends Activity implements View.OnClickListener {
         Intent intent = new Intent(this, InCallActivity.class);
         intent.putExtra("target", ip);
         intent.putExtra("requestCode", InCallActivity.DIALLED);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         startActivity(intent);
     }

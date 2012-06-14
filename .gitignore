@@ -1,7 +1,6 @@
 bin/
 out/
 assets/
-libs/
 .idea/*
 .idea/*/*
 *~

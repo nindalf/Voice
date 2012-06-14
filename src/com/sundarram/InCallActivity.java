@@ -31,16 +31,9 @@ public class InCallActivity extends Activity
 
         mTimer = ((TextView)findViewById(R.id.timer));
         mTimer.setText(R.string.ringing);
-        //TODO: Should do when this activity starts
-        //set localInetAddress.
-        //set remoteInetAddress or outsource to other activities.
-        //start localAudio
-        //send Audioport
-        //send ready signal
         //TODO: The following should happend once a READY signal is received:
         // Hold and Mute enabled.
         // Timer should start.
-        // Set inCall
         // Listen for changes to receivedSignal
         // the hold and mute buttons must only be enabled after the call connects. Timer should only start then.
         initTimer();
@@ -59,7 +52,7 @@ public class InCallActivity extends Activity
         public void onClick(View paramView) {
             mHandler.removeCallbacks(mUpdateTimeTask);
             finish();
-            mService.send(VoiceService.END, VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
+            mService.send(VoiceService.END, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
         }
     };
 
@@ -74,14 +67,14 @@ public class InCallActivity extends Activity
                     mService.holdGroup(true);
                     holdButton.setText(R.string.text_button_resume);
                     muteButton.setEnabled(false);
-                    mService.send(VoiceService.HOLD, VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
+                    mService.send(VoiceService.HOLD, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
                 }
                 else {
                     // will unhold the AudioGroup - set it to NORMAL
                     mService.holdGroup(false);
                     holdButton.setText(R.string.text_button_hold);
                     muteButton.setEnabled(true);
-                    mService.send(VoiceService.UNHOLD, VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
+                    mService.send(VoiceService.UNHOLD, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
                 }
 
             }
@@ -99,14 +92,14 @@ public class InCallActivity extends Activity
                     mService.muteGroup(true);
                     muteButton.setText(R.string.text_button_unmute);
                     holdButton.setEnabled(false);
-                    mService.send(VoiceService.MUTE, VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
+                    mService.send(VoiceService.MUTE, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
                 }
                 else {
                     // will unmute the AudioGroup
                     mService.muteGroup(false);
                     muteButton.setText(R.string.text_button_mute);
                     holdButton.setEnabled(true);
-                    mService.send(VoiceService.UNMUTE, VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
+                    mService.send(VoiceService.UNMUTE, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
                 }
 
             }
