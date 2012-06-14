@@ -48,27 +48,28 @@ public final class R {
         public static final int icon=0x7f02001a;
     }
     public static final class id {
-        public static final int accept=0x7f080015;
+        public static final int accept=0x7f080016;
         public static final int call=0x7f08000d;
         public static final int clear=0x7f08000a;
         public static final int dtmfDialerField=0x7f080000;
         public static final int eight=0x7f080008;
-        public static final int end=0x7f080011;
+        public static final int end=0x7f080012;
         public static final int five=0x7f080005;
         public static final int four=0x7f080004;
-        public static final int hold=0x7f080013;
+        public static final int hold=0x7f080014;
         public static final int ip_address=0x7f08000e;
-        public static final int mute=0x7f080012;
-        public static final int new_call_ip=0x7f080014;
+        public static final int mute=0x7f080013;
+        public static final int new_call_ip=0x7f080015;
         public static final int nine=0x7f080009;
         public static final int one=0x7f080001;
         public static final int peers_ip=0x7f08000f;
         public static final int period=0x7f08000c;
-        public static final int reject=0x7f080016;
+        public static final int reject=0x7f080017;
         public static final int seven=0x7f080007;
         public static final int six=0x7f080006;
+        public static final int status=0x7f080010;
         public static final int three=0x7f080003;
-        public static final int timer=0x7f080010;
+        public static final int timer=0x7f080011;
         public static final int two=0x7f080002;
         public static final int zero=0x7f08000b;
     }
@@ -98,11 +99,13 @@ public final class R {
         public static final int end=0x7f050004;
         public static final int in_call_with=0x7f050025;
         public static final int incoming_call=0x7f050005;
-        public static final int new_call_from=0x7f05002c;
+        public static final int new_call_from=0x7f05002e;
         public static final int pickup=0x7f050006;
-        public static final int ringing=0x7f05002b;
+        public static final int status_ended=0x7f05002c;
+        public static final int status_rejected=0x7f05002d;
+        public static final int status_ringing=0x7f05002b;
         public static final int target_ip=0x7f050002;
-        public static final int text_button_accept=0x7f05002d;
+        public static final int text_button_accept=0x7f05002f;
         public static final int text_button_call=0x7f050024;
         public static final int text_button_clear=0x7f050023;
         public static final int text_button_eight=0x7f05001d;
@@ -115,7 +118,7 @@ public final class R {
         public static final int text_button_one=0x7f050016;
         public static final int text_button_period=0x7f050022;
         public static final int text_button_pound=0x7f050021;
-        public static final int text_button_reject=0x7f05002e;
+        public static final int text_button_reject=0x7f050030;
         public static final int text_button_resume=0x7f050028;
         public static final int text_button_seven=0x7f05001c;
         public static final int text_button_six=0x7f05001b;

@@ -14,12 +14,18 @@ public class DiallerActivity extends Activity implements View.OnClickListener {
     LocalBroadcastManager mLocalBroadcastManager;
     public static final String ACTION_MAKE_CALL = "com.sundarram.MAKE_CALL";
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        Intent startServiceIntent = new Intent(this, VoiceService.class);
+        startService(startServiceIntent);
+    }
+
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
         setContentView(R.layout.dialler);
         new Helper.IpSetter().execute((TextView)findViewById(R.id.ip_address));
-
 
         findViewById(R.id.one).setOnClickListener(this);
         findViewById(R.id.two).setOnClickListener(this);
@@ -34,7 +40,6 @@ public class DiallerActivity extends Activity implements View.OnClickListener {
         findViewById(R.id.period).setOnClickListener(this);
         findViewById(R.id.clear).setOnClickListener(this);
         findViewById(R.id.call).setOnClickListener(this);
-
     }
 
     public void onClick(View view) {
@@ -92,7 +97,6 @@ public class DiallerActivity extends Activity implements View.OnClickListener {
             case R.id.call:
                 makeCall(diallerField.getText().toString());
                 break;
-
         }
     }
 
@@ -111,14 +115,10 @@ public class DiallerActivity extends Activity implements View.OnClickListener {
             else
                 findViewById(R.id.call).setEnabled(false);
         }
-
     }
 
     private boolean valid(int number) {
-        if(number >= 0 && number <=255)
-            return true;
-        else
-            return false;
+        return (number >= 0 && number <= 255);
     }
 
     private void makeCall(String ip) {

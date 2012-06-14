@@ -47,7 +47,9 @@
     <string name="text_button_resume">Resume</string>
     <string name="text_button_mute">Mute</string>
     <string name="text_button_unmute">Unmute</string>
-    <string name="ringing">Ringing</string>
+    <string name="status_ringing">Waiting for Peer to respond</string>
+    <string name="status_ended">Call Ended</string>
+    <string name="status_rejected">Call Rejected</string>
 
     <string name="new_call_from">New Call From:</string>
     <string name="text_button_accept">Pick Up</string>

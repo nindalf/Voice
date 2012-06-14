@@ -1,6 +1,5 @@
 package com.sundarram;
 
-import android.app.Activity;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -43,7 +42,7 @@ public class VoiceService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if(newCallListenerWorking == false) {
+        if(!newCallListenerWorking) {
             new Thread(new NewCallListener(NEW_CALL_PORT)).start();
         }
         Log.i("VoiceService", "Received start id " + startId + ": " + intent);
@@ -55,6 +54,7 @@ public class VoiceService extends Service {
         stopLocalBroadcastManager();
         Log.i("VoiceService", "Service destroyed");
     }
+
 
     /**
      * Client functions to manipulate the AudioGroup and AudioStream.
@@ -69,8 +69,8 @@ public class VoiceService extends Service {
     public static final int SIGNAL_RECEIVE_PORT = 8236;
     public static final int SIGNAL_SEND_PORT = 8235;
 
+    /** Starts an AudioStream on localInetAddress on a random port(in accordance with the RFC). */
     public void startAudioStream() {
-        //remove the following line. set the localInetAddress somewhere else.
         localInetAddress = Helper.getLocalIpAddress();
         try  {
             audioStream= new AudioStream(localInetAddress);
@@ -78,13 +78,16 @@ public class VoiceService extends Service {
         catch(SocketException e) {
             e.printStackTrace();
         }
-        catch(NullPointerException e) {
-            e.printStackTrace();
-        }
         localAudioPort = audioStream.getLocalPort();
         Log.i("VoiceService", "audioStream started on " + localInetAddress.getHostName() + " on port " + localAudioPort);
     }
 
+    /**
+     * To be called when the following variables are set:
+     * remoteInetAddress, remoteAudioPort
+     * localInetAddress, localAudioPort
+     * When both users run this function, full-duplex audio conversation starts.
+     */
     public void setStreams() {
         AudioCodec localAudioCodec = AudioCodec.AMR;
         audioGroup = new AudioGroup();
@@ -94,6 +97,9 @@ public class VoiceService extends Service {
         audioStream.setMode(AudioGroup.MODE_NORMAL);
         audioStream.join(audioGroup);
         Log.i("VoiceService", "audioStream associated with remote peer.");
+
+        Intent intent = new Intent(ACTION_REMOTE_READY);
+        mLocalBroadcastManager.sendBroadcast(intent);
     }
 
     public void holdGroup(boolean hold) {
@@ -138,6 +144,7 @@ public class VoiceService extends Service {
         return false;
     }
 
+    /** Resets all data of the Service */
     public void closeAll() {
         audioStream.join(null);
         audioGroup = null;
@@ -148,42 +155,63 @@ public class VoiceService extends Service {
         localInetAddress = null;
         Log.i("VoiceService", "Resources reset.");
     }
-    //TODO: BOTH OF THE FOLLOWING FUNCTIONS
+
     public void newCall() {
+        Intent newCallIntent = new Intent(this, NewCallActivity.class);
+        newCallIntent.putExtra("target", remoteInetAddress.getHostName());
+        newCallIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        getApplication().startActivity(newCallIntent);
+    }
+
+    /** Called when a new call is made and when a call is accepted. */
+    public void startCall() {
         localInetAddress = Helper.getLocalIpAddress();
 
-        receive(SIGNAL_RECEIVE_PORT);
         startAudioStream();
         send(localAudioPort, SIGNAL_RECEIVE_PORT, SIGNAL_SEND_PORT);
-        // wait for remoteAudioPort
-        // start InCallActivity, don't forget addExtra(target)
 
-
+        Intent intent = new Intent(this, InCallActivity.class);
+        intent.putExtra("target", remoteInetAddress.getHostName());
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
     }
 
+    /** Parses the incoming message and takes action. */
     public void parseSignal(int message) {
-        Intent intent;
-        switch (message) {
-            case HOLD:
-                intent = new Intent(ACTION_REMOTE_HOLD);
-                break;
-            case UNHOLD:
-                intent = new Intent(ACTION_REMOTE_UNHOLD);
-                break;
-            case MUTE:
-                intent = new Intent(ACTION_REMOTE_MUTE);
-                break;
-            case UNMUTE:
-                intent = new Intent(ACTION_REMOTE_UNMUTE);
-                break;
-            case END:
-                intent = new Intent(ACTION_REMOTE_END);
-                break;
-            case REJECT:
-                intent = new Intent(ACTION_REMOTE_REJECT);
-                break;
+        if(message > 10000) {
+            if(!isAudioGroupSet() && localAudioPort != 0)
+                setStreams();
+        }
+        else {
+            Intent intent = new Intent("");
+            switch (message) {
+                case HOLD:
+                    intent = new Intent(ACTION_REMOTE_HOLD);
+                    break;
+                case UNHOLD:
+                    intent = new Intent(ACTION_REMOTE_UNHOLD);
+                    break;
+                case MUTE:
+                    intent = new Intent(ACTION_REMOTE_MUTE);
+                    break;
+                case UNMUTE:
+                    intent = new Intent(ACTION_REMOTE_UNMUTE);
+                    break;
+                case END:
+                    intent = new Intent(ACTION_REMOTE_END);
+                    inCall = false;
+                    closeAll();
+                    break;
+                case REJECT:
+                    intent = new Intent(ACTION_REMOTE_REJECT);
+                    inCall = false;
+                    closeAll();
+                    break;
+            }
+            mLocalBroadcastManager.sendBroadcast(intent);
         }
     }
+
 
     /**
      * LocalBroadcastManager and BroadcastReceiver to handle intents from activities.
@@ -192,26 +220,44 @@ public class VoiceService extends Service {
     LocalBroadcastManager mLocalBroadcastManager;
     BroadcastReceiver mReceiver;
 
+    public static final String ACTION_REMOTE_READY = "com.sundarram.REMOTE_READY";
+    public static final String ACTION_REMOTE_HOLD = "com.sundarram.REMOTE_HOLD";
+    public static final String ACTION_REMOTE_UNHOLD = "com.sundarram.REMOTE_UNHOLD";
+    public static final String ACTION_REMOTE_MUTE = "com.sundarram.REMOTE_MUTE";
+    public static final String ACTION_REMOTE_UNMUTE = "com.sundarram.REMOTE_UNMUTE";
+    public static final String ACTION_REMOTE_END = "com.sundarram.REMOTE_END";
+    public static final String ACTION_REMOTE_REJECT = "com.sundarram.REMOTE_REJECT";
+
+    public static final String ACTION_LOCAL_READY = "com.sundarram.LOCAL_READY";
+    public static final String ACTION_LOCAL_HOLD = "com.sundarram.LOCAL_HOLD";
+    public static final String ACTION_LOCAL_UNHOLD = "com.sundarram.LOCAL_UNHOLD";
+    public static final String ACTION_LOCAL_MUTE = "com.sundarram.LOCAL_MUTE";
+    public static final String ACTION_LOCAL_UNMUTE = "com.sundarram.LOCAL_UNMUTE";
+    public static final String ACTION_LOCAL_END = "com.sundarram.LOCAL_END";
+    public static final String ACTION_LOCAL_REJECT = "com.sundarram.LOCAL_REJECT";
+
     private void startLocalBroadcastManager() {
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
         mReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if(intent.getAction() == NewCallActivity.ACTION_ACCEPTED)
-                    newCall();
-                else if(intent.getAction() == NewCallActivity.ACTION_REJECTED) {
+                String currentAction = intent.getAction();
+                if(currentAction.equals(NewCallActivity.ACTION_ACCEPTED))
+                    startCall();
+                else if(currentAction.equals(NewCallActivity.ACTION_REJECTED)) {
                     send(REJECT, SIGNAL_RECEIVE_PORT, SIGNAL_SEND_PORT);
                     inCall = false;
                     closeAll();
                 }
-                else if(intent.getAction() == DiallerActivity.ACTION_MAKE_CALL) {
+                else if(currentAction.equals(DiallerActivity.ACTION_MAKE_CALL)) {
                     Bundle localBundle = intent.getExtras();
                     String target = ((String)localBundle.get("target"));
                     remoteInetAddress = Helper.getTargetInetaddress(target);
                     localInetAddress = Helper.getLocalIpAddress();
                     inCall = true;
-                    send(START, SIGNAL_RECEIVE_PORT, SIGNAL_SEND_PORT);
-                    newCall();
+                    send(START, NEW_CALL_PORT, SIGNAL_SEND_PORT);
+                    receive(SIGNAL_RECEIVE_PORT);
+                    startCall();
                 }
             }
         };
@@ -232,6 +278,7 @@ public class VoiceService extends Service {
      * Signal sending on SIGNAL_SEND_PORT.
      * Signal receiving on SHORT_SIGNAL_RECEIVE_PORT.
      */
+
     public static final int START = 100;
     //public static final int READY = 101;
     public static final int HOLD = 102;
@@ -240,14 +287,6 @@ public class VoiceService extends Service {
     public static final int UNMUTE = 105;
     public static final int END = 106;
     public static final int REJECT = 107;
-    public static final String ACTION_REMOTE_READY = "com.sundarram.READY";
-    public static final String ACTION_REMOTE_HOLD = "com.sundarram.HOLD";
-    public static final String ACTION_REMOTE_UNHOLD = "com.sundarram.UNHOLD";
-    public static final String ACTION_REMOTE_MUTE = "com.sundarram.MUTE";
-    public static final String ACTION_REMOTE_UNMUTE = "com.sundarram.UNMUTE";
-    public static final String ACTION_REMOTE_END = "com.sundarram.END";
-    public static final String ACTION_REMOTE_REJECT = "com.sundarram.REJECT";
-
 
     public void send(int message, int remotePort, int localPort) {
         new Thread(new Send(message, remotePort, localPort)).start();
@@ -259,6 +298,7 @@ public class VoiceService extends Service {
 
     //TODO: create persistent socket to send. More efficient.
     private class Send implements Runnable {
+
         int toSend, remoteSignalPort, localSignalPort;
 
         Send(int message, int remotePort, int localPort) {
@@ -282,6 +322,9 @@ public class VoiceService extends Service {
             catch (IOException e) {
                 e.printStackTrace();
             }
+            catch (NullPointerException e) {
+                e.printStackTrace();
+            }
             finally {
                 if(socket != null) {
                     try {
@@ -299,16 +342,18 @@ public class VoiceService extends Service {
                         e.printStackTrace();
                     }
                 }
-
             }
         }
     }
 
     private class SignalListener implements Runnable {
+
         int localSignalPort;
+
         SignalListener(int localPort) {
             localSignalPort = localPort;
         }
+
         @Override
         public void run() {
             int message;
@@ -332,7 +377,6 @@ public class VoiceService extends Service {
                         message = dataInputStream.readShort();
                         Log.i("VoiceService", "Received " + message + " from " + remoteInetAddress.getHostName() + " on port " + localSignalPort);
                         parseSignal(message);
-                        // parse the message and take action.
                     }
                 }
                 catch(IOException e) {
@@ -357,15 +401,17 @@ public class VoiceService extends Service {
                     }
                 }
             }
-
         }
     }
 
     private class NewCallListener implements Runnable {
+
         int localSignalPort;
+
         NewCallListener(int localPort) {
             localSignalPort = localPort;
         }
+
         @Override
         public void run() {
             int message;
@@ -388,19 +434,14 @@ public class VoiceService extends Service {
                     socket = serverSocket.accept();
                     dataInputStream = new DataInputStream(socket.getInputStream());
                     message = dataInputStream.readShort();
-                    // parse the message and take action.
-                    if(message == 100 && inCall == false) {
+                    if(message == 100 && !inCall) {
                         remoteInetAddress = socket.getInetAddress();
                         localInetAddress = Helper.getLocalIpAddress();
                         Log.i("VoiceService", "Received " + message + " from " + remoteInetAddress.getHostName() + " on port " + localSignalPort);
                         inCall = true;
+                        receive(SIGNAL_RECEIVE_PORT);
                         // start NewCallActivity
-                        Intent newCallIntent = new Intent(getBaseContext(), NewCallActivity.class);
-                        newCallIntent.putExtra("target", remoteInetAddress.getHostName());
-                        newCallIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        getApplication().startActivity(newCallIntent);
-
-                        //newCall();
+                        newCall();
                     }
                 }
                 catch(IOException e) {
@@ -426,8 +467,6 @@ public class VoiceService extends Service {
                     }
                 }
             }
-
         }
     }
-
 }

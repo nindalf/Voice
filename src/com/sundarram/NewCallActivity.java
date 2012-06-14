@@ -19,6 +19,7 @@ public class NewCallActivity extends Activity implements View.OnClickListener {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
+        setContentView(R.layout.newcall);
 
         Bundle localBundle = getIntent().getExtras();
         String target = ((String)localBundle.get("target"));
@@ -29,7 +30,7 @@ public class NewCallActivity extends Activity implements View.OnClickListener {
     }
 
     public void onClick(View view) {
-        Intent intent = new Intent();
+        Intent intent = new Intent("");
         switch(view.getId()) {
             case R.id.accept:
                 intent = new Intent(ACTION_ACCEPTED);

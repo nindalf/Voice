@@ -2,7 +2,6 @@ package com.sundarram;
 
 import android.app.Activity;
 import android.content.*;
-import android.location.Address;
 import android.net.rtp.AudioGroup;
 import android.os.Bundle;
 import android.os.Handler;
@@ -10,18 +9,14 @@ import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
-
-import com.sundarram.R;
 
 public class InCallActivity extends Activity
 {
     LocalBroadcastManager mLocalBroadcastManager;
     BroadcastReceiver mReceiver;
-
-    private String target;
+    private TextView mStatus;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -29,18 +24,10 @@ public class InCallActivity extends Activity
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
         setContentView(R.layout.incall);
 
-        mTimer = ((TextView)findViewById(R.id.timer));
-        mTimer.setText(R.string.ringing);
-        //TODO: The following should happend once a READY signal is received:
-        // Hold and Mute enabled.
-        // Timer should start.
-        // Listen for changes to receivedSignal
-        // the hold and mute buttons must only be enabled after the call connects. Timer should only start then.
-        initTimer();
-
         Bundle localBundle = getIntent().getExtras();
-        target = ((String)localBundle.get("target"));
-        ((TextView)findViewById(R.id.peers_ip)).setText(this.target);
+        ((TextView)findViewById(R.id.peers_ip)).setText((String)localBundle.get("target"));
+        mStatus = (TextView)findViewById(R.id.status);
+        mStatus.setText(R.string.status_ringing);
 
         findViewById(R.id.end).setOnClickListener(this.onEndListener);
         findViewById(R.id.hold).setOnClickListener(this.onHoldListener);
@@ -50,8 +37,9 @@ public class InCallActivity extends Activity
     private View.OnClickListener onEndListener = new View.OnClickListener() {
         public void onClick(View paramView) {
             mHandler.removeCallbacks(mUpdateTimeTask);
-            finish();
+            mStatus.setText(R.string.status_ended);
             mService.send(VoiceService.END, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
+            finish();
         }
     };
 
@@ -75,7 +63,6 @@ public class InCallActivity extends Activity
                     muteButton.setEnabled(true);
                     mService.send(VoiceService.UNHOLD, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
                 }
-
             }
         }
     };
@@ -100,18 +87,19 @@ public class InCallActivity extends Activity
                     holdButton.setEnabled(true);
                     mService.send(VoiceService.UNMUTE, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
                 }
-
             }
         }
     };
 
-    /** Timer related data members */
-    Handler mHandler;
+    /**
+     * Timer related data and functions.
+    */
+    Handler mHandler = new Handler();
     long mStartTime;
     TextView mTimer;
 
-    /** Initializes timer data memebers and starts the handler */
-    private void initTimer() {
+    /** Initializes timer data memebers and start. */
+    private void startTimer() {
         mTimer = ((TextView)findViewById(R.id.timer));
         mStartTime = SystemClock.uptimeMillis();
         mHandler = new Handler();
@@ -119,7 +107,7 @@ public class InCallActivity extends Activity
         mHandler.postDelayed(mUpdateTimeTask, 100L);
     }
 
-    /** Runnable that updates the timer every second */
+    /** Runnable that updates the timer every second. */
     private Runnable mUpdateTimeTask = new Runnable() {
         public void run() {
             final long start = mStartTime;
@@ -127,15 +115,13 @@ public class InCallActivity extends Activity
             int seconds = (int) (millis / 1000);
             int minutes = seconds / 60;
             seconds     = seconds % 60;
-
             if (seconds < 10) {
                 mTimer.setText("" + minutes + ":0" + seconds);
             } else {
                 mTimer.setText("" + minutes + ":" + seconds);
             }
 
-            mHandler.postAtTime(this,
-                    start + (((minutes * 60) + seconds + 1) * 1000));
+            mHandler.postAtTime(this, start + (((minutes * 60) + seconds + 1) * 1000));
         }
     };
 
@@ -144,7 +130,12 @@ public class InCallActivity extends Activity
         super.finish();
     }
 
-    /** The following code provides a connection to VoiceService*/
+
+    /**
+     * The following code provides a connection to VoiceService.
+     * I wish to deprecate this soon, replacing it with Broadcasts.
+    */
+
     VoiceService mService;
     boolean mBound = false;
 
@@ -181,6 +172,7 @@ public class InCallActivity extends Activity
         }
     };
 
+
     /**
      * LocalBroadcastManager and BroadcastReceiver to handle intents from VoiceService.
      */
@@ -191,13 +183,22 @@ public class InCallActivity extends Activity
             @Override
             //TODO:Add for all intents
             public void onReceive(Context context, Intent intent) {
-                if(intent.getAction() == VoiceService.ACTION_REMOTE_READY)
-                    ;
-                else if(intent.getAction() == VoiceService.ACTION_REMOTE_END)
-                    ;
-                else if(intent.getAction() == VoiceService.ACTION_REMOTE_REJECT)
-                    ;
-
+                String currentAction = intent.getAction();
+                if(currentAction.equals(VoiceService.ACTION_REMOTE_READY)) {
+                    startTimer();
+                    mStatus.setText("");
+                    findViewById(R.id.hold).setEnabled(true);
+                    findViewById(R.id.mute).setEnabled(false);
+                }
+                else if(currentAction.equals(VoiceService.ACTION_REMOTE_END)) {
+                    mStatus.setText(R.string.status_ended);
+                    mHandler.removeCallbacks(mUpdateTimeTask);
+                    finish();
+                }
+                else if(currentAction.equals(VoiceService.ACTION_REMOTE_REJECT)) {
+                    mStatus.setText(R.string.status_rejected);
+                    finish();
+                }
             }
         };
         IntentFilter filter = new IntentFilter();
@@ -214,5 +215,4 @@ public class InCallActivity extends Activity
     private void stopLocalBroadcastManager() {
         mLocalBroadcastManager.unregisterReceiver(mReceiver);
     }
-
 }

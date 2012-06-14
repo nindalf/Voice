@@ -1,9 +1,5 @@
 package com.sundarram;
 
-import android.app.Activity;
-import android.net.rtp.AudioCodec;
-import android.net.rtp.AudioGroup;
-import android.net.rtp.AudioStream;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.TextView;
@@ -14,8 +10,8 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 
-public class Helper
-{
+public class Helper {
+
     public static InetAddress getLocalIpAddress() {
         try {
             for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
@@ -28,7 +24,8 @@ public class Helper
                     }
                 }
             }
-        } catch (SocketException ex) {
+        }
+        catch (SocketException ex) {
             Log.e("IPNo", ex.toString());
         }
         return null;
@@ -45,9 +42,10 @@ public class Helper
         return targetInetAddress;
     }
 
-    public static class IpSetter extends AsyncTask<TextView, Void, String>
-    {
+    public static class IpSetter extends AsyncTask<TextView, Void, String> {
+
         TextView element;
+
         @Override
         protected String doInBackground(TextView... elements) {
             element = elements[0];
@@ -59,8 +57,8 @@ public class Helper
                 Log.e("xxx", e.toString());
             }
             return ip;
-
         }
+
         protected void onPostExecute(String result) {
             element.setText(result);
         }
