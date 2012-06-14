@@ -49,4 +49,8 @@
     <string name="text_button_unmute">Unmute</string>
     <string name="ringing">Ringing</string>
 
+    <string name="new_call_from">New Call From:</string>
+    <string name="text_button_accept">Pick Up</string>
+    <string name="text_button_reject">Reject</string>
+
 </resources>

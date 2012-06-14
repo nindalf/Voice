@@ -31,13 +31,13 @@ public class VoiceService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.i("Voice service", "Received start id " + startId + ": " + intent);
+        Log.i("VoiceService", "Received start id " + startId + ": " + intent);
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        Log.i("Voice service", "Service destroyed");
+        Log.i("VoiceService", "Service destroyed");
     }
 
     /**
@@ -49,15 +49,15 @@ public class VoiceService extends Service {
     private boolean inCall;
     private InetAddress localInetAddress, remoteInetAddress;
     private int localAudioPort, remoteAudioPort;
-    private int sendSignalPort, receiveSignalPort;
     public static final int LONG_SIGNAL_RECEIVE_PORT = 8237;
     public static final int SHORT_SIGNAL_RECEIVE_PORT = 8236;
     public static final int SIGNAL_SEND_PORT = 8235;
 
     public void startAudioStream() {
-        InetAddress localAddress = Helper.getLocalIpAddress();
+        //remove the following line. set the localInetAddress somewhere else.
+        localInetAddress = Helper.getLocalIpAddress();
         try  {
-            audioStream= new AudioStream(localAddress);
+            audioStream= new AudioStream(localInetAddress);
         }
         catch(SocketException e) {
             e.printStackTrace();
@@ -65,6 +65,8 @@ public class VoiceService extends Service {
         catch(NullPointerException e) {
             e.printStackTrace();
         }
+        localAudioPort = audioStream.getLocalPort();
+        Log.i("VoiceService", "audioStream started on " + localInetAddress.getHostName() + " on port " + localAudioPort);
     }
 
     public void setStreams() {
@@ -75,28 +77,28 @@ public class VoiceService extends Service {
         audioStream.setCodec(localAudioCodec);
         audioStream.setMode(AudioGroup.MODE_NORMAL);
         audioStream.join(audioGroup);
-        Log.i("RTP", "audioStream associated with remote peer.");
+        Log.i("VoiceService", "audioStream associated with remote peer.");
     }
 
     public void holdGroup(boolean hold) {
         if (hold) {
             audioGroup.setMode(AudioGroup.MODE_ON_HOLD);
-            Log.i("RTP", "Call on hold. Microphone and Speaker disabled.");
+            Log.i("VoiceService", "Call on hold. Microphone and Speaker disabled.");
         }
         else {
             audioGroup.setMode(AudioGroup.MODE_NORMAL);
-            Log.i("RTP", "Call off hold. Microphone and Speaker enabled.");
+            Log.i("VoiceService", "Call off hold. Microphone and Speaker enabled.");
         }
     }
 
     public void muteGroup(boolean mute) {
         if (mute) {
             audioGroup.setMode(AudioGroup.MODE_MUTED);
-            Log.i("RTP", "Microphone muted.");
+            Log.i("VoiceService", "Microphone muted.");
         }
         else {
             audioGroup.setMode(AudioGroup.MODE_NORMAL);
-            Log.i("RTP", "Microphone unmuted.");
+            Log.i("VoiceService", "Microphone unmuted.");
         }
     }
 
@@ -128,13 +130,13 @@ public class VoiceService extends Service {
         localAudioPort = 0;
         remoteInetAddress = null;
         localInetAddress = null;
-        Log.i("RTP", "Resources reset.");
+        Log.i("VoiceService", "Resources reset.");
     }
 
     /**
      * Threads that enable sending and receiving of signalling data.
-     * Signal sending on 8235.
-     * Signal receiving on 8236.
+     * Signal sending on SIGNAL_SEND_PORT.
+     * Signal receiving on SHORT_SIGNAL_RECEIVE_PORT.
      */
     public static final int START = 100;
     public static final int READY = 101;
@@ -144,31 +146,33 @@ public class VoiceService extends Service {
     public static final int UNMUTE = 105;
     public static final int END = 106;
     public static final int REJECT = 107;
-    public int toSendSignal;
-    public int receivedSignal;
 
     // Is this method better than making the Send class public?
-    public void send(int message, int sendPort) {
-        toSendSignal = message;
-        sendSignalPort = sendPort;
-        new Thread(new Send()).start();
+    public void send(int message, int remotePort) {
+        new Thread(new Send(message, remotePort)).start();
     }
 
-    public void receive(int receivePort) {
-        receiveSignalPort = receivePort;
-        new Thread(new Receive()).start();
+    public void receive(int localPort) {
+        new Thread(new Receive(localPort)).start();
     }
 
+    //TODO: create persistent sockets. More efficient.
     private class Send implements Runnable {
+        int toSend, remoteSignalPort;
+
+        Send(int message, int remotePort) {
+            toSend = message;
+            remoteSignalPort = remotePort;
+        }
 
         public void run() {
             Socket socket = null;
             DataOutputStream dataOutputStream = null;
             try {
-                socket = new Socket(remoteInetAddress.getHostName(), receiveSignalPort, localInetAddress, sendSignalPort);
+                socket = new Socket(remoteInetAddress.getHostName(), remoteSignalPort, localInetAddress, SIGNAL_SEND_PORT);
                 dataOutputStream = new DataOutputStream(socket.getOutputStream());
-                dataOutputStream.writeShort(toSendSignal);
-                Log.i("Send", "Sent " + toSendSignal + "to " + remoteInetAddress.getHostName() + " port " + receiveSignalPort);
+                dataOutputStream.writeShort(toSend);
+                Log.i("VoiceService", "Sent " + toSend + "to " + remoteInetAddress.getHostName() + " port " + remoteSignalPort);
             }
             catch (UnknownHostException e) {
                 e.printStackTrace();
@@ -201,26 +205,34 @@ public class VoiceService extends Service {
     }
 
     private class Receive implements Runnable {
+        int localSignalPort;
+        Receive(int localPort) {
+            localSignalPort = localPort;
+        }
         @Override
         public void run() {
+            int message;
             ServerSocket serverSocket = null;
             Socket socket = null;
             DataInputStream dataInputStream = null;
             boolean flag = true;
             try {
-                serverSocket = new ServerSocket(receiveSignalPort);
+                serverSocket = new ServerSocket(localSignalPort);
             }
             catch(IOException e) {
                 e.printStackTrace();
                 flag = false;
             }
-            while(flag) {
+            while(flag && inCall) {
                 try {
-                    Log.i("Receive", "Listening on port " + receiveSignalPort);
+                    Log.i("Receive", "Listening on port " + localSignalPort);
                     socket = serverSocket.accept();
                     dataInputStream = new DataInputStream(socket.getInputStream());
-                    if(remoteInetAddress.equals(socket.getInetAddress()))
-                        receivedSignal = dataInputStream.readShort();
+                    if(remoteInetAddress.equals(socket.getInetAddress())) {
+                        message = dataInputStream.readShort();
+                        Log.i("VoiceService", "Received " + message + " from " + remoteInetAddress.getHostName() + " on port " + localSignalPort);
+                        // parse the message and take action.
+                    }
                 }
                 catch(IOException e) {
                     e.printStackTrace();

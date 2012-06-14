@@ -39,7 +39,7 @@
             android:gravity="center_horizontal"
             android:orientation="horizontal"
             android:layout_weight="100"
-            android:padding="5dip">
+            android:padding="15dip">
         <Button style="@style/DialpadButtonStyle" android:layout_height="match_parent" android:id="@+id/end" android:text="@string/text_button_end"/>
         </LinearLayout>
 
@@ -49,7 +49,7 @@
             android:gravity="center_horizontal"
             android:orientation="horizontal"
             android:layout_weight="100"
-            android:padding="5dip">
+            android:padding="25dip">
         <Button style="@style/DialpadButtonStyle" android:layout_height="match_parent" android:id="@+id/mute" android:text="@string/text_button_mute"/>
         <Button style="@style/DialpadButtonStyle" android:layout_height="match_parent" android:id="@+id/hold" android:text="@string/text_button_hold"/>
 

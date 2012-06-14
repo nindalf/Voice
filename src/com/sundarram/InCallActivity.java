@@ -59,6 +59,7 @@ public class InCallActivity extends Activity
         public void onClick(View paramView) {
             mHandler.removeCallbacks(mUpdateTimeTask);
             finish();
+            mService.send(VoiceService.END, VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
         }
     };
 
@@ -73,12 +74,14 @@ public class InCallActivity extends Activity
                     mService.holdGroup(true);
                     holdButton.setText(R.string.text_button_resume);
                     muteButton.setEnabled(false);
+                    mService.send(VoiceService.HOLD, VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
                 }
                 else {
                     // will unhold the AudioGroup - set it to NORMAL
                     mService.holdGroup(false);
                     holdButton.setText(R.string.text_button_hold);
                     muteButton.setEnabled(true);
+                    mService.send(VoiceService.UNHOLD, VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
                 }
 
             }
@@ -96,12 +99,14 @@ public class InCallActivity extends Activity
                     mService.muteGroup(true);
                     muteButton.setText(R.string.text_button_unmute);
                     holdButton.setEnabled(false);
+                    mService.send(VoiceService.MUTE, VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
                 }
                 else {
                     // will unmute the AudioGroup
                     mService.muteGroup(false);
                     muteButton.setText(R.string.text_button_mute);
                     holdButton.setEnabled(true);
+                    mService.send(VoiceService.UNMUTE, VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
                 }
 
             }
@@ -157,8 +162,6 @@ public class InCallActivity extends Activity
         //Bind to VoiceService.
         Intent intent = new Intent(this, VoiceService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-        //started the receiver to receive signals from remote client.
-        mService.receive(VoiceService.SHORT_SIGNAL_RECEIVE_PORT);
     }
 
     @Override
