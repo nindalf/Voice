@@ -34,7 +34,7 @@ public class Helper
         return null;
     }
 
-    private InetAddress getTargetInetaddress(String target) {
+    public static InetAddress getTargetInetaddress(String target) {
         InetAddress targetInetAddress = null;
         try {
             targetInetAddress = InetAddress.getByName(target.trim());

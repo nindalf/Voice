@@ -16,8 +16,8 @@ public class NewCallActivity extends Activity implements View.OnClickListener {
     public static final String ACTION_ACCEPTED = "com.sundarram.REJECTED";
     public static final String ACTION_REJECTED = "com.sundarram.ACCEPTED";
 
-    public void onCreate(Bundle paramBundle) {
-        super.onCreate(paramBundle);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
 
         Bundle localBundle = getIntent().getExtras();
@@ -29,19 +29,16 @@ public class NewCallActivity extends Activity implements View.OnClickListener {
     }
 
     public void onClick(View view) {
-        Intent intent;
-
+        Intent intent = new Intent();
         switch(view.getId()) {
             case R.id.accept:
                 intent = new Intent(ACTION_ACCEPTED);
-                mLocalBroadcastManager.sendBroadcast(intent);
                 break;
             case R.id.reject:
                 intent = new Intent(ACTION_REJECTED);
-                mLocalBroadcastManager.sendBroadcast(intent);
                 break;
         }
-
+        mLocalBroadcastManager.sendBroadcast(intent);
     }
 
 }

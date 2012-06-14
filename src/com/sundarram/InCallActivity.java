@@ -1,15 +1,14 @@
 package com.sundarram;
 
 import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
+import android.content.*;
+import android.location.Address;
 import android.net.rtp.AudioGroup;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -19,14 +18,15 @@ import com.sundarram.R;
 
 public class InCallActivity extends Activity
 {
-    public static final int DIALLED = 1;
-    public static final int RECEIVED = 2;
-    private Integer requestedByActivity;
+    LocalBroadcastManager mLocalBroadcastManager;
+    BroadcastReceiver mReceiver;
+
     private String target;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
         setContentView(R.layout.incall);
 
         mTimer = ((TextView)findViewById(R.id.timer));
@@ -39,7 +39,6 @@ public class InCallActivity extends Activity
         initTimer();
 
         Bundle localBundle = getIntent().getExtras();
-        requestedByActivity = ((Integer)localBundle.get("requestCode"));
         target = ((String)localBundle.get("target"));
         ((TextView)findViewById(R.id.peers_ip)).setText(this.target);
 
@@ -155,6 +154,7 @@ public class InCallActivity extends Activity
         //Bind to VoiceService.
         Intent intent = new Intent(this, VoiceService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        startLocalBroadcastManager();
     }
 
     @Override
@@ -164,6 +164,7 @@ public class InCallActivity extends Activity
             unbindService(mConnection);
             mBound = false;
         }
+        stopLocalBroadcastManager();
     }
     /** Binds this activity to the VoiceService */
     private ServiceConnection mConnection = new ServiceConnection() {
@@ -179,5 +180,39 @@ public class InCallActivity extends Activity
             mBound = false;
         }
     };
+
+    /**
+     * LocalBroadcastManager and BroadcastReceiver to handle intents from VoiceService.
+     */
+
+    private void startLocalBroadcastManager() {
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
+        mReceiver = new BroadcastReceiver() {
+            @Override
+            //TODO:Add for all intents
+            public void onReceive(Context context, Intent intent) {
+                if(intent.getAction() == VoiceService.ACTION_REMOTE_READY)
+                    ;
+                else if(intent.getAction() == VoiceService.ACTION_REMOTE_END)
+                    ;
+                else if(intent.getAction() == VoiceService.ACTION_REMOTE_REJECT)
+                    ;
+
+            }
+        };
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(VoiceService.ACTION_REMOTE_READY);
+        filter.addAction(VoiceService.ACTION_REMOTE_HOLD);
+        filter.addAction(VoiceService.ACTION_REMOTE_UNHOLD);
+        filter.addAction(VoiceService.ACTION_REMOTE_MUTE);
+        filter.addAction(VoiceService.ACTION_REMOTE_UNMUTE);
+        filter.addAction(VoiceService.ACTION_REMOTE_END);
+        filter.addAction(VoiceService.ACTION_REMOTE_REJECT);
+        mLocalBroadcastManager.registerReceiver(mReceiver, filter);
+    }
+
+    private void stopLocalBroadcastManager() {
+        mLocalBroadcastManager.unregisterReceiver(mReceiver);
+    }
 
 }

@@ -4,13 +4,19 @@ package com.sundarram;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
 public class DiallerActivity extends Activity implements View.OnClickListener {
+
+    LocalBroadcastManager mLocalBroadcastManager;
+    public static final String ACTION_MAKE_CALL = "com.sundarram.MAKE_CALL";
+
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
         setContentView(R.layout.dialler);
         new Helper.IpSetter().execute((TextView)findViewById(R.id.ip_address));
 
@@ -116,11 +122,9 @@ public class DiallerActivity extends Activity implements View.OnClickListener {
     }
 
     private void makeCall(String ip) {
-        Intent intent = new Intent(this, InCallActivity.class);
+        Intent intent = new Intent(ACTION_MAKE_CALL);
         intent.putExtra("target", ip);
-        intent.putExtra("requestCode", InCallActivity.DIALLED);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-        startActivity(intent);
+        mLocalBroadcastManager.sendBroadcast(intent);
     }
 }

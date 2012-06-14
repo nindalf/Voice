@@ -3,6 +3,7 @@ package com.sundarram;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 /**
  * This BroadcastReceiver is launched upon receiving any of the following intents.
@@ -16,5 +17,6 @@ public class BootupBroadcastReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Intent startServiceIntent = new Intent(context, VoiceService.class);
         context.startService(startServiceIntent);
+        Log.i("VoiceService", "BroadcastReceiver Starting VoiceService.");
     }
 }
