@@ -1,4 +1,4 @@
-package com.sundarram;
+package com.sundarram.voice;
 
 import android.app.Activity;
 import android.content.*;
@@ -39,6 +39,7 @@ public class InCallActivity extends Activity
             mHandler.removeCallbacks(mUpdateTimeTask);
             mStatus.setText(R.string.status_ended);
             mService.send(VoiceService.END, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
+            mService.endCall();
             finish();
         }
     };

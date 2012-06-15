@@ -1,4 +1,4 @@
-package com.sundarram;
+package com.sundarram.voice;
 
 
 import android.app.Activity;
@@ -9,12 +9,11 @@ import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.widget.TextView;
-import com.sundarram.R;
 
 public class NewCallActivity extends Activity implements View.OnClickListener {
     LocalBroadcastManager mLocalBroadcastManager;
-    public static final String ACTION_ACCEPTED = "com.sundarram.REJECTED";
-    public static final String ACTION_REJECTED = "com.sundarram.ACCEPTED";
+    public static final String ACTION_ACCEPTED = "com.sundarram.voice.REJECTED";
+    public static final String ACTION_REJECTED = "com.sundarram.voice.ACCEPTED";
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

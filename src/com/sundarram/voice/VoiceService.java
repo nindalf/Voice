@@ -1,4 +1,4 @@
-package com.sundarram;
+package com.sundarram.voice;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -176,6 +176,11 @@ public class VoiceService extends Service {
         startActivity(intent);
     }
 
+    public void endCall() {
+        inCall = false;
+        closeAll();
+    }
+
     /** Parses the incoming message and takes action. */
     public void parseSignal(int message) {
         if(message > 10000) {
@@ -199,13 +204,11 @@ public class VoiceService extends Service {
                     break;
                 case END:
                     intent = new Intent(ACTION_REMOTE_END);
-                    inCall = false;
-                    closeAll();
+                    endCall();
                     break;
                 case REJECT:
                     intent = new Intent(ACTION_REMOTE_REJECT);
-                    inCall = false;
-                    closeAll();
+                    endCall();
                     break;
             }
             mLocalBroadcastManager.sendBroadcast(intent);
@@ -220,21 +223,21 @@ public class VoiceService extends Service {
     LocalBroadcastManager mLocalBroadcastManager;
     BroadcastReceiver mReceiver;
 
-    public static final String ACTION_REMOTE_READY = "com.sundarram.REMOTE_READY";
-    public static final String ACTION_REMOTE_HOLD = "com.sundarram.REMOTE_HOLD";
-    public static final String ACTION_REMOTE_UNHOLD = "com.sundarram.REMOTE_UNHOLD";
-    public static final String ACTION_REMOTE_MUTE = "com.sundarram.REMOTE_MUTE";
-    public static final String ACTION_REMOTE_UNMUTE = "com.sundarram.REMOTE_UNMUTE";
-    public static final String ACTION_REMOTE_END = "com.sundarram.REMOTE_END";
-    public static final String ACTION_REMOTE_REJECT = "com.sundarram.REMOTE_REJECT";
+    public static final String ACTION_REMOTE_READY = "com.sundarram.voice.REMOTE_READY";
+    public static final String ACTION_REMOTE_HOLD = "com.sundarram.voice.REMOTE_HOLD";
+    public static final String ACTION_REMOTE_UNHOLD = "com.sundarram.voice.REMOTE_UNHOLD";
+    public static final String ACTION_REMOTE_MUTE = "com.sundarram.voice.REMOTE_MUTE";
+    public static final String ACTION_REMOTE_UNMUTE = "com.sundarram.voice.REMOTE_UNMUTE";
+    public static final String ACTION_REMOTE_END = "com.sundarram.voice.REMOTE_END";
+    public static final String ACTION_REMOTE_REJECT = "com.sundarram.voice.REMOTE_REJECT";
 
-    public static final String ACTION_LOCAL_READY = "com.sundarram.LOCAL_READY";
-    public static final String ACTION_LOCAL_HOLD = "com.sundarram.LOCAL_HOLD";
-    public static final String ACTION_LOCAL_UNHOLD = "com.sundarram.LOCAL_UNHOLD";
-    public static final String ACTION_LOCAL_MUTE = "com.sundarram.LOCAL_MUTE";
-    public static final String ACTION_LOCAL_UNMUTE = "com.sundarram.LOCAL_UNMUTE";
-    public static final String ACTION_LOCAL_END = "com.sundarram.LOCAL_END";
-    public static final String ACTION_LOCAL_REJECT = "com.sundarram.LOCAL_REJECT";
+    public static final String ACTION_LOCAL_READY = "com.sundarram.voice.LOCAL_READY";
+    public static final String ACTION_LOCAL_HOLD = "com.sundarram.voice.LOCAL_HOLD";
+    public static final String ACTION_LOCAL_UNHOLD = "com.sundarram.voice.LOCAL_UNHOLD";
+    public static final String ACTION_LOCAL_MUTE = "com.sundarram.voice.LOCAL_MUTE";
+    public static final String ACTION_LOCAL_UNMUTE = "com.sundarram.voice.LOCAL_UNMUTE";
+    public static final String ACTION_LOCAL_END = "com.sundarram.voice.LOCAL_END";
+    public static final String ACTION_LOCAL_REJECT = "com.sundarram.voice.LOCAL_REJECT";
 
     private void startLocalBroadcastManager() {
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
@@ -373,8 +376,8 @@ public class VoiceService extends Service {
                     Log.i("VoiceService", "Listening for Signals on port " + localSignalPort);
                     socket = serverSocket.accept();
                     dataInputStream = new DataInputStream(socket.getInputStream());
+                    message = dataInputStream.readShort();
                     if(remoteInetAddress.equals(socket.getInetAddress())) {
-                        message = dataInputStream.readShort();
                         Log.i("VoiceService", "Received " + message + " from " + remoteInetAddress.getHostName() + " on port " + localSignalPort);
                         parseSignal(message);
                     }
