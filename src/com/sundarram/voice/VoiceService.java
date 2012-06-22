@@ -94,7 +94,6 @@ public class VoiceService extends Service {
         audioGroup.setMode(AudioGroup.MODE_NORMAL);
         audioStream.associate(remoteInetAddress, remoteAudioPort);
         audioStream.setCodec(localAudioCodec);
-        audioStream.setMode(AudioGroup.MODE_NORMAL);
         audioStream.join(audioGroup);
         Log.i("VoiceService", "audioStream associated with remote peer.");
 
@@ -262,12 +261,21 @@ public class VoiceService extends Service {
                     receive(SIGNAL_RECEIVE_PORT);
                     startCall();
                 }
+                else if(currentAction.equals(VoiceService.NEW_SIGNAL)) {
+                    Bundle localBundle = intent.getExtras();
+                    int signal = (Integer)localBundle.get("signal");
+                    parseSignal(signal);
+                }
+                else if(currentAction.equals(VoiceService.NEW_CALL))
+                    newCall();
             }
         };
         IntentFilter filter = new IntentFilter();
         filter.addAction(NewCallActivity.ACTION_ACCEPTED);
         filter.addAction(NewCallActivity.ACTION_REJECTED);
         filter.addAction(DiallerActivity.ACTION_MAKE_CALL);
+        filter.addAction(VoiceService.NEW_SIGNAL);
+        filter.addAction(VoiceService.NEW_CALL);
         mLocalBroadcastManager.registerReceiver(mReceiver, filter);
     }
 
@@ -316,7 +324,7 @@ public class VoiceService extends Service {
             try {
                 socket = new Socket(remoteInetAddress.getHostName(), remoteSignalPort, localInetAddress, localSignalPort);
                 dataOutputStream = new DataOutputStream(socket.getOutputStream());
-                dataOutputStream.writeShort(toSend);
+                dataOutputStream.writeInt(toSend);
                 Log.i("VoiceService", "Sent " + toSend + "to " + remoteInetAddress.getHostName() + " port " + remoteSignalPort);
             }
             catch (UnknownHostException e) {
@@ -349,6 +357,8 @@ public class VoiceService extends Service {
         }
     }
 
+    public static final String NEW_SIGNAL = "com.sundarram.voice.NEW_SIGNAL";
+    public static final String NEW_CALL = "com.sundarram.voice.NEW_CALL";
     private class SignalListener implements Runnable {
 
         int localSignalPort;
@@ -376,10 +386,13 @@ public class VoiceService extends Service {
                     Log.i("VoiceService", "Listening for Signals on port " + localSignalPort);
                     socket = serverSocket.accept();
                     dataInputStream = new DataInputStream(socket.getInputStream());
-                    message = dataInputStream.readShort();
+                    message = dataInputStream.readInt();
                     if(remoteInetAddress.equals(socket.getInetAddress())) {
                         Log.i("VoiceService", "Received " + message + " from " + remoteInetAddress.getHostName() + " on port " + localSignalPort);
-                        parseSignal(message);
+                        //parseSignal(message);
+                        Intent intent = new Intent(VoiceService.NEW_SIGNAL);
+                        intent.putExtra("signal", message);
+                        mLocalBroadcastManager.sendBroadcast(intent);
                     }
                 }
                 catch(IOException e) {
@@ -402,6 +415,14 @@ public class VoiceService extends Service {
                             e.printStackTrace();
                         }
                     }
+                }
+            }
+            if(!inCall && serverSocket != null) {
+                try {
+                    serverSocket.close();
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -424,7 +445,6 @@ public class VoiceService extends Service {
             boolean flag = true;
             try {
                 serverSocket = new ServerSocket(localSignalPort);
-                newCallListenerWorking = true;
             }
             catch(IOException e) {
                 e.printStackTrace();
@@ -433,10 +453,11 @@ public class VoiceService extends Service {
             }
             while(flag) {
                 try {
+                    newCallListenerWorking = true;
                     Log.i("VoiceService", "Listening for new calls on port " + localSignalPort);
                     socket = serverSocket.accept();
                     dataInputStream = new DataInputStream(socket.getInputStream());
-                    message = dataInputStream.readShort();
+                    message = dataInputStream.readInt();
                     if(message == 100 && !inCall) {
                         remoteInetAddress = socket.getInetAddress();
                         localInetAddress = Helper.getLocalIpAddress();
@@ -444,14 +465,14 @@ public class VoiceService extends Service {
                         inCall = true;
                         receive(SIGNAL_RECEIVE_PORT);
                         // start NewCallActivity
-                        newCall();
+                        Intent intent = new Intent(VoiceService.NEW_CALL);
+                        mLocalBroadcastManager.sendBroadcast(intent);
                     }
                 }
                 catch(IOException e) {
                     e.printStackTrace();
                 }
                 finally  {
-                    newCallListenerWorking = false;
                     if(socket != null) {
                         try {
                             socket.close();
@@ -470,6 +491,7 @@ public class VoiceService extends Service {
                     }
                 }
             }
+            newCallListenerWorking = false;
         }
     }
 }

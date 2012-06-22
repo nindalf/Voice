@@ -36,9 +36,9 @@ public class InCallActivity extends Activity
 
     private View.OnClickListener onEndListener = new View.OnClickListener() {
         public void onClick(View paramView) {
+            mService.send(VoiceService.END, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
             mHandler.removeCallbacks(mUpdateTimeTask);
             mStatus.setText(R.string.status_ended);
-            mService.send(VoiceService.END, VoiceService.SIGNAL_RECEIVE_PORT, VoiceService.SIGNAL_SEND_PORT);
             mService.endCall();
             finish();
         }
