@@ -39,6 +39,7 @@ public class NewCallActivity extends Activity implements View.OnClickListener {
                 break;
         }
         mLocalBroadcastManager.sendBroadcast(intent);
+        finish();
     }
 
 }

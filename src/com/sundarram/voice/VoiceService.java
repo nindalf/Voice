@@ -10,6 +10,7 @@ import android.net.rtp.AudioGroup;
 import android.net.rtp.AudioStream;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -92,6 +93,7 @@ public class VoiceService extends Service {
         AudioCodec localAudioCodec = AudioCodec.AMR;
         audioGroup = new AudioGroup();
         audioGroup.setMode(AudioGroup.MODE_NORMAL);
+
         audioStream.associate(remoteInetAddress, remoteAudioPort);
         audioStream.setCodec(localAudioCodec);
         audioStream.join(audioGroup);
@@ -164,10 +166,15 @@ public class VoiceService extends Service {
 
     /** Called when a new call is made and when a call is accepted. */
     public void startCall() {
-        localInetAddress = Helper.getLocalIpAddress();
+        //localInetAddress = Helper.getLocalIpAddress();
 
-        startAudioStream();
-        send(localAudioPort, SIGNAL_RECEIVE_PORT, SIGNAL_SEND_PORT);
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                send(localAudioPort, SIGNAL_RECEIVE_PORT, SIGNAL_SEND_PORT);
+            }
+        }, 1000);
 
         Intent intent = new Intent(this, InCallActivity.class);
         intent.putExtra("target", remoteInetAddress.getHostName());
@@ -182,8 +189,10 @@ public class VoiceService extends Service {
 
     /** Parses the incoming message and takes action. */
     public void parseSignal(int message) {
-        if(message > 10000) {
+        if(message > 1000) {
             if(!isAudioGroupSet() && localAudioPort != 0)
+                remoteAudioPort = message;
+                Log.i("VoiceService", "Remote Audio Port is " + remoteAudioPort);
                 setStreams();
         }
         else {
@@ -259,6 +268,7 @@ public class VoiceService extends Service {
                     inCall = true;
                     send(START, NEW_CALL_PORT, SIGNAL_SEND_PORT);
                     receive(SIGNAL_RECEIVE_PORT);
+                    startAudioStream();
                     startCall();
                 }
                 else if(currentAction.equals(VoiceService.NEW_SIGNAL)) {
@@ -322,10 +332,11 @@ public class VoiceService extends Service {
             Socket socket = null;
             DataOutputStream dataOutputStream = null;
             try {
-                socket = new Socket(remoteInetAddress.getHostName(), remoteSignalPort, localInetAddress, localSignalPort);
+                //socket = new Socket(remoteInetAddress.getHostName(), remoteSignalPort, localInetAddress, localSignalPort);
+                socket = new Socket(remoteInetAddress, remoteSignalPort);
                 dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 dataOutputStream.writeInt(toSend);
-                Log.i("VoiceService", "Sent " + toSend + "to " + remoteInetAddress.getHostName() + " port " + remoteSignalPort);
+                Log.i("VoiceService", "Sent " + toSend + " to " + remoteInetAddress.getHostName() + " port " + remoteSignalPort);
             }
             catch (UnknownHostException e) {
                 e.printStackTrace();
@@ -359,6 +370,7 @@ public class VoiceService extends Service {
 
     public static final String NEW_SIGNAL = "com.sundarram.voice.NEW_SIGNAL";
     public static final String NEW_CALL = "com.sundarram.voice.NEW_CALL";
+
     private class SignalListener implements Runnable {
 
         int localSignalPort;
@@ -464,6 +476,7 @@ public class VoiceService extends Service {
                         Log.i("VoiceService", "Received " + message + " from " + remoteInetAddress.getHostName() + " on port " + localSignalPort);
                         inCall = true;
                         receive(SIGNAL_RECEIVE_PORT);
+                        startAudioStream();
                         // start NewCallActivity
                         Intent intent = new Intent(VoiceService.NEW_CALL);
                         mLocalBroadcastManager.sendBroadcast(intent);
