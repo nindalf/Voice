@@ -12,7 +12,7 @@ import android.widget.TextView;
 public class DiallerActivity extends Activity implements View.OnClickListener {
 
     LocalBroadcastManager mLocalBroadcastManager;
-    public static final String ACTION_MAKE_CALL = "com.sundarram.MAKE_CALL";
+    public static final String ACTION_MAKE_CALL = "com.sundarram.voice.MAKE_CALL";
 
     @Override
     public void onStart() {
